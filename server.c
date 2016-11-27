@@ -27,9 +27,52 @@ void getargs(int *port, int *thread_count, int argc, char *argv[])
  }
  *port = atoi(argv[1]);
  *thread_count = atoi(argv[2]);
- *buffer_size = atoi(argv[3]);
+ buffer_size = atoi(argv[3]);
 }
 
+
+void do_fill(int connfd)
+{
+    buffer[j++] = connfd;
+    j = j % buffer_size;
+    stored_count++;
+}
+
+int do_get()
+{
+    int connfd = buffer[k++];
+    k = k % buffer_size;
+    stored_count--; 
+    return connfd;
+}
+
+// unable to call as a function
+
+/*
+// From Slides
+void *producer(void *arg){
+    pthread_mutex_lock(&m);
+     while (stored_count == buffer_size)
+       pthread_cond_wait(&empty, &m); 
+     do_fill(connfd);
+     pthread_cond_signal(&fill); 
+     pthread_mutex_unlock(&m); 
+}
+*/
+
+void *consumer(void *arg) {
+  while (1) {
+    pthread_mutex_lock(&m); 
+    while (stored_count == 0) {
+      pthread_cond_wait(&fill, &m);
+  }
+  int connfd = do_get(); 
+  pthread_cond_signal(&empty); 
+  pthread_mutex_unlock(&m); 
+  requestHandle(connfd);
+  Close(connfd);
+}
+}
 
 int main(int argc, char *argv[])
 {
@@ -78,49 +121,6 @@ int main(int argc, char *argv[])
     
  }
 
-}
-
-// unable to call as a function
-
-/*
-// From Slides
-void *producer(void *arg){
-    pthread_mutex_lock(&m);
-     while (stored_count == buffer_size)
-       pthread_cond_wait(&empty, &m); 
-     do_fill(connfd);
-     pthread_cond_signal(&fill); 
-     pthread_mutex_unlock(&m); 
-}
-*/
-
-void *consumer(void *arg) {
-  while (1) {
-    pthread_mutex_lock(&m); 
-    while (numfall == 0) {
-      Cond_wait(&fill, &m);
-  }
-  int connfd = do_get(); 
-  Cond_signal(&empty); 
-  pthread_mutex_unlock(&m); 
-  requestHandle(connfd);
-  Close(connfd);
-}
-}
-
-void do_fill(int connfd)
-{
-    buffer[j++] = connfd;
-    j = j % buffer_size;
-    stored_count++;
-}
-
-int do_get()
-{
-    int connfd = buffer[k++];
-    k = k % buffer_size;
-    stored_count--; 
-    return connfd;
 }
 
 
